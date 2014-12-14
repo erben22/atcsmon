@@ -144,11 +144,58 @@ Function Connect-Database([string]$database)
     Write-Host "Done with the database operations."
 }
 
+function Get-EntryKeyValue([string]$keyValueData)
+{
+    Set-Variable -Option Constant keyValueDelimiter -Value '='
+    $keyValueData.Split($keyValueDelimiter)
+
+    #$keyValueData[0]
+    #$keyValueData[1]
+}
+
+function Import-MCPFile([System.IO.FileInfo]$mcpFile)
+{
+    # Need to parse the MCP file, building up a collection of the data in it.
+
+    $mcpFileContents = Get-Content $mcpFile.FullName
+    $keyValueData = Get-EntryKeyValue($mcpFileContents[1])
+
+    Write-Host "keyValueData is: " $keyValueData
+
+    $numMCPEntries = [Convert]::ToInt32((Get-EntryKeyValue($mcpFileContents[1]))[1], 10)
+
+    Write-Host "Processing " $numMCPEntries " MCP entries..."
+
+    $mcpLineIndex = 2
+
+    while ($mcpFileContents.Count -gt $mcpLineIndex)
+    {
+        $keyValueData = Get-EntryKeyValue($mcpFileContents[$mcpLineIndex])
+        
+        $parsed = $keyValueData[0] -match '^([a-zA-Z]+)([0-9]+)'
+
+        if ($parsed)
+        {
+            $mcpIndex = [Convert]::ToInt32($matches[2], 10)
+            Write-Host "  File Index(" $mcpLineIndex "): MCP Index(" $mcpIndex ") Key(" $matches[1] ") Value(" $keyValueData[1] ")"
+        }
+
+        $mcpLineIndex++;
+    }
+}
+
 function HandleMCPs([System.IO.FileInfo]$mcpFile)
 {
     Write-Host "Processing an MCP/MDB file: " $mcpFile.FullName
 
-    Connect-Database $mcpFile.FullName
+    if (".mcp" -eq $mcpFile.Extension)
+    {
+        # Process with the MCP importer.
+
+        Import-MCPFile $mcpFile
+    }
+
+    #Connect-Database $mcpFile.FullName
 }
 
 # Ensure the project root exists.
@@ -191,4 +238,3 @@ else
 {
     Write-Host "territoryRoot does not exist: $territoryRoot"
 }
-
