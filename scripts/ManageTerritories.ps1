@@ -79,7 +79,7 @@ Function Connect-Database([string]$database)
         #if ("TABLE" -eq $objRecordset.Fields.Item("TABLE_TYPE").Value)
         if ("MCP" -eq $objRecordset.Fields.Item("TABLE_NAME").Value)
         {
-            Write-Host "Table Name: " $objRecordset.Fields.Item("COLUMN_NAME").Value;
+            Write-Host "Column Name: " $objRecordset.Fields.Item("COLUMN_NAME").Value;
         }             
         $objRecordset.MoveNext()
     } until ($objRecordset.EOF -eq $True)
