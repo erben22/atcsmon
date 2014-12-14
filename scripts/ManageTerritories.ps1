@@ -148,9 +148,6 @@ function Get-EntryKeyValue([string]$keyValueData)
 {
     Set-Variable -Option Constant keyValueDelimiter -Value '='
     $keyValueData.Split($keyValueDelimiter)
-
-    #$keyValueData[0]
-    #$keyValueData[1]
 }
 
 function Import-MCPFile([System.IO.FileInfo]$mcpFile)
@@ -178,6 +175,9 @@ function Import-MCPFile([System.IO.FileInfo]$mcpFile)
         {
             $mcpIndex = [Convert]::ToInt32($matches[2], 10)
             Write-Host "  File Index(" $mcpLineIndex "): MCP Index(" $mcpIndex ") Key(" $matches[1] ") Value(" $keyValueData[1] ")"
+
+            # Need to use two hashtables.  One will be an mcpIndex key, to a hashtable value.  The
+            # second will be a hashtable of all the mcpIndex entries.
         }
 
         $mcpLineIndex++;
