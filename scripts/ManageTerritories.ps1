@@ -58,66 +58,88 @@ Function Connect-Database([string]$database)
     #   - Do I need to know each column in the MCP db, or, can I just
     #     pass in a recordset?
 
-
-    $adOpenStatic = 3
-    $adLockOptimistic = 3
-
-    $objConnection = New-Object -comobject ADODB.Connection
-    #$objRecordset = New-Object -comobject ADODB.Recordset
-
-    $provider = "Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=C:\Users\rerben\Dropbox\ATCSMon-Script-Test\atcsdb.mdb"
-
-    $objConnection.Open($provider)
-    $adSchemaTables = 20
-    $adSchemaColumns = 4
-
-    #$objRecordset = $objConnection.OpenSchema($adSchemaTables)
-    $objRecordset = $objConnection.OpenSchema($adSchemaColumns)
-
-    do 
+    try
     {
-        #if ("TABLE" -eq $objRecordset.Fields.Item("TABLE_TYPE").Value)
-        if ("MCP" -eq $objRecordset.Fields.Item("TABLE_NAME").Value)
+        $adOpenStatic = 3
+        $adLockOptimistic = 3
+
+        $adSchemaTables = 20
+        $adSchemaColumns = 4
+
+        $atcsDB = New-Object -ComObject ADODB.Connection
+        $atcsDBProvider = "Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=C:\Users\rerben\Dropbox\ATCSMon-Script-Test\atcsdb.mdb"
+    
+        #$kitUpdateDB = New-Object -ComObject ADODB.Connection
+        #$kitDBProvider = "Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=" + $database
+        #$kitDBProvider = "Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=C:\Users\rerben\Dropbox\ATCSMon\Downloads\Territories\incoming\extract\BNSF-eastwashington-20141118.mdb"
+
+        $atcsDBProvider.Open($kitDBProvider)
+
+        #$objRecordset = $atcsDBProvider.OpenSchema($adSchemaTables)
+        $objRecordset = $atcsDBProvider.OpenSchema($adSchemaColumns)
+        $objRecordset.MoveFirst()
+
+        do 
         {
-            Write-Host "Column Name: " $objRecordset.Fields.Item("COLUMN_NAME").Value;
-        }             
-        $objRecordset.MoveNext()
-    } until ($objRecordset.EOF -eq $True)
+            #if ("TABLE" -eq $objRecordset.Fields.Item("TABLE_TYPE").Value)
+            if ("MCP" -eq $objRecordset.Fields.Item("TABLE_NAME").Value)
+            {
+                Write-Host "Column Name: " $objRecordset.Fields.Item("COLUMN_NAME").Value;
+            }             
+            $objRecordset.MoveNext()
+        } until ($objRecordset.EOF -eq $True)
 
-    $objRecordset.Close()
+        $objRecordset.Close()
 
-    $objConnection.Close()
+        $objRecordset.Open("Select * from MCP", $kitUpdateDB, $adOpenStatic, $adLockOptimistic)
 
-#Set rstList = cnnDB.OpenSchema(adSchemaTables)
+        $objRecordset.MoveFirst()
 
-#   ' Loop through the results and print the
-#   ' names and types in the Immediate pane.
-#   With rstList
-#      Do While Not .EOF
-#         If .Fields("TABLE_TYPE") <> "VIEW" Then
-#            Debug.Print .Fields("TABLE_NAME") & vbTab & _
-#               .Fields("TABLE_TYPE")
-#         End If
-#         .MoveNext
-#      Loop
-#   End With
-#   cnnDB.Close
+        do 
+        {
+            $objRecordset.Fields.Item("MCPAddress").Value; 
+            $objRecordset.MoveNext()
+        } until ($objRecordset.EOF -eq $True)
+
+        $objRecordset.Close()
 
 
-    #$objRecordset.Open("Select * from MCP", $objConnection,$adOpenStatic,$adLockOptimistic)
+        $atcsDBProvider.Close()
 
-    #$objRecordset.MoveFirst()
+    #Set rstList = cnnDB.OpenSchema(adSchemaTables)
 
-    #do 
-    #{
-    #    $objRecordset.Fields.Item("MCPAddress").Value; 
-    #    $objRecordset.MoveNext()
-    #} until ($objRecordset.EOF -eq $True)
+    #   ' Loop through the results and print the
+    #   ' names and types in the Immediate pane.
+    #   With rstList
+    #      Do While Not .EOF
+    #         If .Fields("TABLE_TYPE") <> "VIEW" Then
+    #            Debug.Print .Fields("TABLE_NAME") & vbTab & _
+    #               .Fields("TABLE_TYPE")
+    #         End If
+    #         .MoveNext
+    #      Loop
+    #   End With
+    #   cnnDB.Close
 
-    #$objRecordset.Close()
 
-    #$objConnection.Close()
+        #$objRecordset.Open("Select * from MCP", $kitUpdateDB,$adOpenStatic,$adLockOptimistic)
 
+        #$objRecordset.MoveFirst()
+
+        #do 
+        #{
+        #    $objRecordset.Fields.Item("MCPAddress").Value; 
+        #    $objRecordset.MoveNext()
+        #} until ($objRecordset.EOF -eq $True)
+
+        #$objRecordset.Close()
+
+        #$kitUpdateDB.Close()
+    }
+    catch
+    {
+        $Error[0]
+    }
 
     Write-Host "Done with the database operations."
 }
