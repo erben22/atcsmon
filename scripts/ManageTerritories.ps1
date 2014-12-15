@@ -184,11 +184,6 @@ function Import-MCPFile([System.IO.FileInfo]$mcpFile)
             # Need to use two hashtables.  One will be an mcpIndex key, to a hashtable value.  The
             # second will be a hashtable of all the mcpIndex entries.
 
-            if ($matches[1] -eq "MCPAddress")
-            {
-                $currentMCPAddress = $keyValueData[1]
-            }
-
             if ($currentMCPIndex -ne $mcpIndex)
             {
                 # Have a new MCP entry to handle.  Add the previous entry, then clear
@@ -198,6 +193,11 @@ function Import-MCPFile([System.IO.FileInfo]$mcpFile)
 
                 $mcpData.Clear()
                 $currentMCPIndex = $mcpIndex
+            }
+
+            if ($matches[1] -eq "MCPAddress")
+            {
+                $currentMCPAddress = $keyValueData[1]
             }
 
             $mcpData.Add($matches[1], $keyValueData[1])
