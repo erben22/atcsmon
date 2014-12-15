@@ -1,20 +1,29 @@
 <#
 .SYNOPSIS 
-    Fill me in...
+    Script for handling ATCSMon territory updates.  Design to run as a scheduled
+    task, firing off and looking for new territories, and then extracting and 
+    applying them to ATCSMon install(s).
 
 .DESCRIPTION
-    Add fluff here.
+    Script that will extract and ATCSMon territory package, place files in 
+    appropriate locations, and then import the MCP update package (either an
+    ini or database) into the ATCSMon database.
 
-.PARAMETER ParameterName
-    Describe it here
+.PARAMETER territoryRoot
+    Directory where the territory(ies) to import are located.  Zip files in this
+    location will be processed.
     
+.PARAMETER atcsmonRoot
+    Root directory for an ATCSMon installation to apply the territory updates
+    to.
+
 .EXAMPLE
-    Connect-AzureVM -AzureSubscriptionName "Visual Studio Ultimate with MSDN" -ServiceName "Finance" -VMName "WebServer01" -AzureOrgIdCredential $cred
-    ManageTerritories.ps1 -blah
+    ManageTerritories.ps1 -territoryRoot 'C:\ATCSMon\Downloads\Territories\incoming' `
+        -atcsmonRoot 'C:\ATCSMon' 
 
 .NOTES
     AUTHOR: R. Cody Erben
-    LASTEDIT: 20141128
+    LASTEDIT: 20141215
 #>
 
 [CmdletBinding()]
@@ -22,7 +31,7 @@ param (
     [parameter(Mandatory=$false, Position=0)]
     [string]$territoryRoot = 'C:\Users\rerben\Dropbox\ATCSMon\Downloads\Territories\incoming',
 
-    [parameter(Mandatory=$false, Position=0)]
+    [parameter(Mandatory=$false, Position=1)]
     [string]$atcsmonRoot = 'C:\Users\rerben\Dropbox\ATCSMon-Script-Test' 
 )
 
@@ -179,7 +188,7 @@ function Import-MCPFile([System.IO.FileInfo]$mcpFile)
         if ($parsed)
         {
             $mcpIndex = [Convert]::ToInt32($matches[2], 10)
-            Write-Host "  File Index(" $mcpLineIndex "): MCP Index(" $mcpIndex ") Key(" $matches[1] ") Value(" $keyValueData[1] ")"
+            #Write-Host "  File Index(" $mcpLineIndex "): MCP Index(" $mcpIndex ") Key(" $matches[1] ") Value(" $keyValueData[1] ")"
 
             # Need to use two hashtables.  One will be an mcpIndex key, to a hashtable value.  The
             # second will be a hashtable of all the mcpIndex entries.
@@ -209,7 +218,16 @@ function Import-MCPFile([System.IO.FileInfo]$mcpFile)
     $mcpEntry.Add($currentMCPAddress, $mcpData)
 
     Write-Host "Done processing MCP file.  mcpEntry data:"
-    $mcpEntry
+
+    foreach ($entry in $mcpEntry.GetEnumerator())
+    {
+        Write-Host "$($entry.Name): $($entry.Value)"
+
+        foreach ($valueEntry in $entry.value.GetEnumerator())
+        {
+            Write-Host "    $($valueEntry.Name): $($valueEntry.Value)"
+        }
+    }
 }
 
 function HandleMCPs([System.IO.FileInfo]$mcpFile)
