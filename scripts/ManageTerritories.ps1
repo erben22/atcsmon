@@ -38,15 +38,20 @@ param (
 Import-Module WDAC
 
 ###############################################################################
-# Function to grep input from the pipeline.
+# Use the shell to extract a zip file.
 ###############################################################################
 function Expand-ZIPFile([string]$file, [string]$destination)
 {
-    $shell = new-object -com shell.application
+    $shellCopyOpNoProgressDialog = 4
+    $shellCopyOpYesToAll = 16
+
+    $shell = New-Object -com Shell.Application
     $zip = $shell.NameSpace($file)
+
     foreach($item in $zip.items())
     {
-       $shell.Namespace($destination).copyhere($item)
+        $shell.Namespace($destination).CopyHere($item, `
+            $shellCopyOpNoProgressDialog -bor $shellCopyOpYesToAll)
     }
 }
 
