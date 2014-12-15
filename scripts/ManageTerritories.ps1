@@ -168,16 +168,16 @@ function Import-MCPFile([System.IO.FileInfo]$mcpFile)
 {
     # Need to parse the MCP file, building up a collection of the data in it.
 
+    # Gobble up the MCP file content.
+
     $mcpFileContents = Get-Content $mcpFile.FullName
-    $keyValueData = Get-EntryKeyValue($mcpFileContents[1])
-
-    Write-Host "keyValueData is: " $keyValueData
-
-    $numMCPEntries = [Convert]::ToInt32((Get-EntryKeyValue($mcpFileContents[1]))[1], 10)
-
-    Write-Host "Processing " $numMCPEntries " MCP entries..."
+        
+    # Start our processing after skipping the first two lines.  The first line
+    # is the ini file section, and the second line is the number of MCP entries.
 
     $mcpLineIndex = 2
+
+    # Initialize some variables we will use in our processing.
 
     $mcpEntry = @{}
     $mcpData = @{}
@@ -186,22 +186,31 @@ function Import-MCPFile([System.IO.FileInfo]$mcpFile)
 
     while ($mcpFileContents.Count -gt $mcpLineIndex)
     {
+        # Read the key/value entry in the MCP file:
+
         $keyValueData = Get-EntryKeyValue($mcpFileContents[$mcpLineIndex])
         
+        # Ensure we have a valid key of the form 'xyz99'.
+
         $parsed = $keyValueData[0] -match '^([a-zA-Z]+)([0-9]+)'
 
         if ($parsed)
         {
+            # From parsing of the key, matches[2] is the MCP index we are
+            # processing in this iteration.
+
             $mcpIndex = [Convert]::ToInt32($matches[2], 10)
+            
             #Write-Host "  File Index(" $mcpLineIndex "): MCP Index(" $mcpIndex ") Key(" $matches[1] ") Value(" $keyValueData[1] ")"
 
-            # Need to use two hashtables.  One will be an mcpIndex key, to a hashtable value.  The
-            # second will be a hashtable of all the mcpIndex entries.
+            # If our currentMCPIndex differs from the mcpIndex we parsed out
+            # of the key, then we have hit a new record.
 
             if ($currentMCPIndex -ne $mcpIndex)
             {
-                # Have a new MCP entry to handle.  Add the previous entry, then clear
-                # the working data.
+                # Have a new MCP entry to handle.  Add the hashtable of data 
+                # to our mcpEntry, then clear the working data hashtable so
+                # it can build up data for the next MCP.
 
                 $mcpEntry.Add($currentMCPAddress, $mcpData)            
 
@@ -209,10 +218,16 @@ function Import-MCPFile([System.IO.FileInfo]$mcpFile)
                 $currentMCPIndex = $mcpIndex
             }
 
+            # The key we processed is MCPAddress, so we want to set our
+            # key into the mcpEntry hashtable to the value of MCPAddress.
+
             if ($matches[1] -eq "MCPAddress")
             {
                 $currentMCPAddress = $keyValueData[1]
             }
+
+            # Once we get here, we want to store the key/value pair
+            # into our mcpData hashtable.
 
             $mcpData.Add($matches[1], $keyValueData[1])
         }
@@ -220,19 +235,38 @@ function Import-MCPFile([System.IO.FileInfo]$mcpFile)
         $mcpLineIndex++;
     }
 
+    # Due to how we process data, once we complete iterating, we have a record
+    # that we have built-up, but was not added to the mcpEntry collection yet.
+    # We take care of that here, and we now have all our file data contained
+    # in a collection we can use and index into.
+
     $mcpEntry.Add($currentMCPAddress, $mcpData)
 
-    Write-Host "Done processing MCP file.  mcpEntry data:"
+    # Check and see if the MCP file told us to process the same number of
+    # records as we actually processed.  Treating as a warning for now...
+    # should maybe flag this as an error.
 
-    foreach ($entry in $mcpEntry.GetEnumerator())
+    $mcpEntriesFromMCPFile = [Convert]::ToInt32((Get-EntryKeyValue($mcpFileContents[1]))[1], 10)
+    if ($mcpEntriesFromMCPFile -ne $mcpEntry.Count)
     {
-        Write-Host "$($entry.Name): $($entry.Value)"
-
-        foreach ($valueEntry in $entry.value.GetEnumerator())
-        {
-            Write-Host "    $($valueEntry.Name): $($valueEntry.Value)"
-        }
+        Write-Warning "Difference in number of MCP entries from MCP file ($mcpEntriesFromMCPFile) and records parsed ($($mcpEntry.Count))."
     }
+
+    #Write-Host "Done processing MCP file.  mcpEntry data:"
+
+    #foreach ($entry in $mcpEntry.GetEnumerator())
+    #{
+    #    Write-Host "$($entry.Name): $($entry.Value)"
+    #
+    #    foreach ($valueEntry in $entry.value.GetEnumerator())
+    #    {
+    #        Write-Host "    $($valueEntry.Name): $($valueEntry.Value)"
+    #    }
+    #}
+
+    # Return the mcpEntry collection to the caller.
+
+    $mcpEntry
 }
 
 function HandleMCPs([System.IO.FileInfo]$mcpFile)
@@ -243,7 +277,7 @@ function HandleMCPs([System.IO.FileInfo]$mcpFile)
     {
         # Process with the MCP importer.
 
-        Import-MCPFile $mcpFile
+        $mcpCollection = Import-MCPFile $mcpFile
     }
 
     #Connect-Database $mcpFile.FullName
