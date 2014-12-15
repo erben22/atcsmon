@@ -165,6 +165,11 @@ function Import-MCPFile([System.IO.FileInfo]$mcpFile)
 
     $mcpLineIndex = 2
 
+    $mcpEntry = @{}
+    $mcpData = @{}
+    $currentMCPIndex = 1
+    $currentMCPAddress = ''
+
     while ($mcpFileContents.Count -gt $mcpLineIndex)
     {
         $keyValueData = Get-EntryKeyValue($mcpFileContents[$mcpLineIndex])
@@ -178,10 +183,30 @@ function Import-MCPFile([System.IO.FileInfo]$mcpFile)
 
             # Need to use two hashtables.  One will be an mcpIndex key, to a hashtable value.  The
             # second will be a hashtable of all the mcpIndex entries.
+
+            if ($matches[1] -eq "MCPAddress")
+            {
+                $currentMCPAddress = $keyValueData[1]
+            }
+
+            if ($currentMCPIndex -ne $mcpIndex)
+            {
+                # Have a new MCP entry to handle.  Add the previous entry, then clear
+                # the working data.
+
+                $mcpEntry.Add($currentMCPAddress, $mcpData)            
+
+                $mcpData.Clear()
+                $currentMCPIndex = $mcpIndex
+            }
+
+            $mcpData.Add($matches[1], $keyValueData[1])
         }
 
         $mcpLineIndex++;
     }
+
+    Write-Host "Done processing MCP file."
 }
 
 function HandleMCPs([System.IO.FileInfo]$mcpFile)
