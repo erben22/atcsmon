@@ -206,8 +206,10 @@ function Import-MCPFile([System.IO.FileInfo]$mcpFile)
         $mcpLineIndex++;
     }
 
-    $mcpEntry.Add($currentMCPAddress, $mcpData)            
-    Write-Host "Done processing MCP file."
+    $mcpEntry.Add($currentMCPAddress, $mcpData)
+
+    Write-Host "Done processing MCP file.  mcpEntry data:"
+    $mcpEntry
 }
 
 function HandleMCPs([System.IO.FileInfo]$mcpFile)
