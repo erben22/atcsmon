@@ -87,7 +87,7 @@ Function Connect-Database([string]$database)
         #$kitDBProvider = "Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=" + $database
         #$kitDBProvider = "Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=C:\Users\rerben\Dropbox\ATCSMon\Downloads\Territories\incoming\extract\BNSF-eastwashington-20141118.mdb"
 
-        $atcsDBProvider.Open($kitDBProvider)
+        $atcsDB.Open($kitDBProvider)
 
         #$objRecordset = $atcsDBProvider.OpenSchema($adSchemaTables)
         $objRecordset = $atcsDBProvider.OpenSchema($adSchemaColumns)
@@ -156,6 +156,21 @@ Function Connect-Database([string]$database)
     }
 
     Write-Host "Done with the database operations."
+}
+
+function Open-Database([System.IO.FileInfo]$databasePath)
+{
+    if (Test-Path $databasePath.FullName)
+    {
+        $database = New-Object -ComObject ADODB.Connection
+        $databaseProvider = "Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=$($databasePath.FullName)"
+
+        Write-Host "databaseProvider is: $($databaseProvider)"
+
+        $database.Open($databaseProvider)
+        
+        $database.Close()        
+    }
 }
 
 function Get-EntryKeyValue([string]$keyValueData)
@@ -269,6 +284,14 @@ function Import-MCPFile([System.IO.FileInfo]$mcpFile)
     $mcpEntry
 }
 
+function Get-ATCSMonDB()
+{
+    if (Test-Path $atcsmonRoot)
+    {
+        Get-ChildItem -File -Filter 'atcsdb.mdb' -Path $atcsmonRoot
+    }
+}
+
 function HandleMCPs([System.IO.FileInfo]$mcpFile)
 {
     Write-Host "Processing an MCP/MDB file: " $mcpFile.FullName
@@ -278,6 +301,9 @@ function HandleMCPs([System.IO.FileInfo]$mcpFile)
         # Process with the MCP importer.
 
         $mcpCollection = Import-MCPFile $mcpFile
+
+        $atcsDBFile = Get-ATCSMonDB
+        $atcsDatabase = Open-Database($atcsDBFile)
     }
 
     #Connect-Database $mcpFile.FullName
