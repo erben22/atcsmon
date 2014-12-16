@@ -1,25 +1,25 @@
 <#
-.SYNOPSIS 
+.SYNOPSIS
     Script for handling ATCSMon territory updates.  Design to run as a scheduled
-    task, firing off and looking for new territories, and then extracting and 
+    task, firing off and looking for new territories, and then extracting and
     applying them to ATCSMon install(s).
 
 .DESCRIPTION
-    Script that will extract and ATCSMon territory package, place files in 
+    Script that will extract and ATCSMon territory package, place files in
     appropriate locations, and then import the MCP update package (either an
     ini or database) into the ATCSMon database.
 
 .PARAMETER territoryRoot
     Directory where the territory(ies) to import are located.  Zip files in this
     location will be processed.
-    
+
 .PARAMETER atcsmonRoot
     Root directory for an ATCSMon installation to apply the territory updates
     to.
 
 .EXAMPLE
     ManageTerritories.ps1 -territoryRoot 'C:\ATCSMon\Downloads\Territories\incoming' `
-        -atcsmonRoot 'C:\ATCSMon' 
+        -atcsmonRoot 'C:\ATCSMon'
 
 .NOTES
     AUTHOR: R. Cody Erben
@@ -32,7 +32,7 @@ param (
     [string]$territoryRoot = 'C:\Users\rerben\Dropbox\ATCSMon\Downloads\Territories\incoming',
 
     [parameter(Mandatory=$false, Position=1)]
-    [string]$atcsmonRoot = 'C:\Users\rerben\Dropbox\ATCSMon-Script-Test' 
+    [string]$atcsmonRoot = 'C:\Users\rerben\Dropbox\ATCSMon-Script-Test'
 )
 
 Import-Module WDAC
@@ -68,19 +68,19 @@ function Get-DatabaseInfo($database)
 {
     if ($database)
     {
-        try
-        {
+        #try
+        #{
             #$objRecordset = $database.OpenSchema($adSchemaTables)
             $objRecordset = $database.OpenSchema($adSchemaColumns)
             $objRecordset.MoveFirst()
 
-            do 
+            do
             {
                 #if ("TABLE" -eq $objRecordset.Fields.Item("TABLE_TYPE").Value)
                 if ("MCP" -eq $objRecordset.Fields.Item("TABLE_NAME").Value)
                 {
-                    Write-Host "Column Name: " $objRecordset.Fields.Item("COLUMN_NAME").Value;
-                }             
+                    Write-Host "Column Name: " $objRecordset.Fields.Item("COLUMN_NAME").Value
+                }
                 $objRecordset.MoveNext()
             } until ($objRecordset.EOF -eq $True)
 
@@ -89,48 +89,50 @@ function Get-DatabaseInfo($database)
             $objRecordset.Open("Select * from MCP", $database, $adOpenStatic, $adLockOptimistic)
             $objRecordset.MoveFirst()
 
-            do 
+            $mcpDBData = @()
+
+            do
             {
-                $objRecordset.Fields.Item("MCPAddress").Value; 
+
+                $mcpObject = New-Object PSObject -Property @{
+                    MCPAddress = $objRecordset.Fields.Item("MCPAddress").Value}
+
+#                $mcpObject = New-Object PSObject -Property @{
+#                    MCPAddress = $objRecordset.Fields.Item("MCPAddress").Value
+#                    MCPName = $objRecordset.Fields.Item("MCPName").Value
+#                    MCPMilepost = $objRecordset.Fields.Item("MCPMilepost").Value
+#                    MCPControlMessageNo = $objRecordset.Fields.Item("MCPControlMessageNo").Value
+#                    MCPControlBits = $objRecordset.Fields.Item("MCPControlBits").Value
+#                    MCPControlMnemonics = $objRecordset.Fields.Item("MCPControlMnemonics").Value
+#                    MCPIndicationMessageNo = $objRecordset.Fields.Item("MCPIndicationMessageNo").Value
+#                    MCPIndicationBits = $objRecordset.Fields.Item("MCPIndicationBits").Value
+#                    MCPIndicationMnemonics = $objRecordset.Fields.Item("MCPIndicationMnemonics").Value
+#                    MCPSubdivision = $objRecordset.Fields.Item("MCPSubdivision").Value
+#                    MCPStateCountry = $objRecordset.Fields.Item("MCPStateCountry").Value
+#                    MCPFrequency = $objRecordset.Fields.Item("MCPFrequency").Value
+#                    MCPProtocol = $objRecordset.Fields.Item("MCPProtocol").Value
+#                    MCPResetRoutes = $objRecordset.Fields.Item("MCPResetRoutes").Value
+#                    MCPLongitude = $objRecordset.Fields.Item("MCPLongitude").Value
+#                    MCPLatitude = $objRecordset.Fields.Item("MCPLatitude").Value
+#                    MCPUpdated = $objRecordset.Fields.Item("MCPUpdated").Value
+#                    MCPActivityI = $objRecordset.Fields.Item("MCPActivityI").Value
+#                    MCPActivityC = $objRecordset.Fields.Item("MCPActivityC").Value}
+
+                #$mcpDBData += $mcpObject
+
                 $objRecordset.MoveNext()
             } until ($objRecordset.EOF -eq $True)
 
             $objRecordset.Close()
 
+            #$mcpDBData | Format-Table
+
             Write-Host "Done with the database operations."
-
-            #Set rstList = cnnDB.OpenSchema(adSchemaTables)
-            #
-            #   ' Loop through the results and print the
-            #   ' names and types in the Immediate pane.
-            #   With rstList
-            #      Do While Not .EOF
-            #         If .Fields("TABLE_TYPE") <> "VIEW" Then
-            #            Debug.Print .Fields("TABLE_NAME") & vbTab & _
-            #               .Fields("TABLE_TYPE")
-            #         End If
-            #         .MoveNext
-            #      Loop
-            #   End With
-            #   cnnDB.Close
-
-            #$objRecordset.Open("Select * from MCP", $kitUpdateDB,$adOpenStatic,$adLockOptimistic)
-            #$objRecordset.MoveFirst()
-
-            #do 
-            #{
-            #    $objRecordset.Fields.Item("MCPAddress").Value; 
-            #    $objRecordset.MoveNext()
-            #} until ($objRecordset.EOF -eq $True)
-
-            #$objRecordset.Close()
-
-            #$kitUpdateDB.Close()
-        }
-        catch
-        {
-            $Error[0]
-        }
+        #}
+        #catch
+        #{
+        #    Write-Error "Error occured: $_"
+        #}
     }
 }
 
@@ -169,7 +171,7 @@ function Import-MCPFile([System.IO.FileInfo]$mcpFile)
     # Gobble up the MCP file content.
 
     $mcpFileContents = Get-Content $mcpFile.FullName
-        
+
     # Start our processing after skipping the first two lines.  The first line
     # is the ini file section, and the second line is the number of MCP entries.
 
@@ -187,7 +189,7 @@ function Import-MCPFile([System.IO.FileInfo]$mcpFile)
         # Read the key/value entry in the MCP file:
 
         $keyValueData = Get-EntryKeyValue($mcpFileContents[$mcpLineIndex])
-        
+
         # Ensure we have a valid key of the form 'xyz99'.
 
         $parsed = $keyValueData[0] -match '^([a-zA-Z]+)([0-9]+)'
@@ -198,7 +200,7 @@ function Import-MCPFile([System.IO.FileInfo]$mcpFile)
             # processing in this iteration.
 
             $mcpIndex = [Convert]::ToInt32($matches[2], 10)
-            
+
             #Write-Host "  File Index(" $mcpLineIndex "): MCP Index(" $mcpIndex ") Key(" $matches[1] ") Value(" $keyValueData[1] ")"
 
             # If our currentMCPIndex differs from the mcpIndex we parsed out
@@ -206,11 +208,11 @@ function Import-MCPFile([System.IO.FileInfo]$mcpFile)
 
             if ($currentMCPIndex -ne $mcpIndex)
             {
-                # Have a new MCP entry to handle.  Add the hashtable of data 
+                # Have a new MCP entry to handle.  Add the hashtable of data
                 # to our mcpEntry, then clear the working data hashtable so
                 # it can build up data for the next MCP.
 
-                $mcpEntry.Add($currentMCPAddress, $mcpData)            
+                $mcpEntry.Add($currentMCPAddress, $mcpData)
 
                 $mcpData.Clear()
                 $currentMCPIndex = $mcpIndex
@@ -309,7 +311,7 @@ function HandleMCPs([System.IO.FileInfo]$mcpFile)
 
 # Ensure the project root exists.
 
-try 
+try
 {
     if (Test-path $territoryRoot)
     {
