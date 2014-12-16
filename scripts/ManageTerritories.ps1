@@ -312,41 +312,49 @@ function HandleMCPs([System.IO.FileInfo]$mcpFile)
 
 # Ensure the project root exists.
 
-if (Test-path $territoryRoot)
+try 
 {
-    $territories = Get-ChildItem -File -Filter '*.zip' -Path $territoryRoot
-
-    foreach ($territory in $territories)
+    if (Test-path $territoryRoot)
     {
-        $extractDir = Join-Path -Path $territoryRoot -ChildPath 'extract'
-        New-Item -Force -ItemType Directory -Path $extractDir | Out-Null
+        $territories = Get-ChildItem -File -Filter '*.zip' -Path $territoryRoot
 
-        Expand-ZIPFile $territory.FullName $extractDir
-
-        Write-Host "Extracted contents:"
-        $extractedContents = Get-ChildItem -File -Path $extractDir
-
-        foreach ($extractedItem in $extractedContents)
+        foreach ($territory in $territories)
         {
-            Write-Host "  " $extractedItem
+            $extractDir = Join-Path -Path $territoryRoot -ChildPath 'extract'
+            New-Item -Force -ItemType Directory -Path $extractDir | Out-Null
 
-            switch ($extractedItem.Extension)
+            Expand-ZIPFile $territory.FullName $extractDir
+
+            Write-Host "Extracted contents:"
+            $extractedContents = Get-ChildItem -File -Path $extractDir
+
+            foreach ($extractedItem in $extractedContents)
             {
-                ".mcp" {HandleMCPs $extractedItem}
-                ".mdb" {HandleMCPs $extractedItem}
-                ".lay" {Write-Host "     Layout file"}
-                ".ini" {Write-Host "     INI file"}
-                ".txt" {Write-Host "     TEXT file"}
-                ".kmz" {Write-Host "     KMZ file"}
-                default {Write-Host "     Unknown file"}
-            }
-        }
+                Write-Host "  " $extractedItem
 
-        Write-Host "Removing the extract directory..." $extractDir
-        Remove-Item -Force -Recurse -Path $extractDir
+                switch ($extractedItem.Extension)
+                {
+                    ".mcp" {HandleMCPs $extractedItem}
+                    ".mdb" {HandleMCPs $extractedItem}
+                    ".lay" {Write-Host "     Layout file"}
+                    ".ini" {Write-Host "     INI file"}
+                    ".txt" {Write-Host "     TEXT file"}
+                    ".kmz" {Write-Host "     KMZ file"}
+                    default {Write-Host "     Unknown file"}
+                }
+            }
+
+            Write-Host "Removing the extract directory..." $extractDir
+            Remove-Item -Force -Recurse -Path $extractDir
+        }
+    }
+    else
+    {
+        Write-Host "territoryRoot does not exist: $territoryRoot"
     }
 }
-else
+catch
 {
-    Write-Host "territoryRoot does not exist: $territoryRoot"
+    Write-Error $_
+    [System.Environment]::Exit(1)
 }
