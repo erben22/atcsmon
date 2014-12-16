@@ -169,8 +169,17 @@ function Open-Database([System.IO.FileInfo]$databasePath)
         $databaseProvider = "Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=$($databasePath.FullName)"
 
         $database.Open($databaseProvider)
-        
-        $database.Close()        
+
+        return $database
+    }
+}
+
+function Close-Database($database)
+{
+    if ($database)
+    {
+        $database.Close()
+        [System.Runtime.Interopservices.Marshal]::ReleaseComObject($database)
     }
 }
 
@@ -305,6 +314,10 @@ function HandleMCPs([System.IO.FileInfo]$mcpFile)
 
         $atcsDBFile = Get-ATCSMonDB
         $atcsDatabase = Open-Database($atcsDBFile)
+
+        #$atcsDatabase.Close()
+
+        Close-Database($atcsDatabase)
     }
 
     #Connect-Database $mcpFile.FullName
