@@ -37,6 +37,9 @@ param (
 
 Import-Module WDAC
 
+Set-StrictMode -version 2
+$ErrorActionPreference = "Stop"
+
 ###############################################################################
 # Use the shell to extract a zip file.
 ###############################################################################
@@ -164,8 +167,6 @@ function Open-Database([System.IO.FileInfo]$databasePath)
     {
         $database = New-Object -ComObject ADODB.Connection
         $databaseProvider = "Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=$($databasePath.FullName)"
-
-        Write-Host "databaseProvider is: $($databaseProvider)"
 
         $database.Open($databaseProvider)
         
