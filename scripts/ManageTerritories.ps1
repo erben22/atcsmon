@@ -95,37 +95,34 @@ function Get-DatabaseInfo($database)
             {
 
                 $mcpObject = New-Object PSObject -Property @{
-                    MCPAddress = $objRecordset.Fields.Item("MCPAddress").Value}
+                    MCPAddress = $objRecordset.Fields.Item("MCPAddress").Value
+                    MCPName = $objRecordset.Fields.Item("MCPName").Value
+                    MCPMilepost = $objRecordset.Fields.Item("MCPMilepost").Value
+                    MCPControlMessageNo = $objRecordset.Fields.Item("MCPControlMessageNo").Value
+                    MCPControlBits = $objRecordset.Fields.Item("MCPControlBits").Value
+                    MCPControlMnemonics = $objRecordset.Fields.Item("MCPControlMnemonics").Value
+                    MCPIndicationMessageNo = $objRecordset.Fields.Item("MCPIndicationMessageNo").Value
+                    MCPIndicationBits = $objRecordset.Fields.Item("MCPIndicationBits").Value
+                    MCPIndicationMnemonics = $objRecordset.Fields.Item("MCPIndicationMnemonics").Value
+                    MCPSubdivision = $objRecordset.Fields.Item("MCPSubdivision").Value
+                    MCPStateCounty = $objRecordset.Fields.Item("MCPStateCounty").Value
+                    MCPFrequency = $objRecordset.Fields.Item("MCPFrequency").Value
+                    MCPProtocol = $objRecordset.Fields.Item("MCPProtocol").Value
+                    MCPResetRoutes = $objRecordset.Fields.Item("MCPResetRoutes").Value
+                    MCPLongitude = $objRecordset.Fields.Item("MCPLongitude").Value
+                    MCPLatitude = $objRecordset.Fields.Item("MCPLatitude").Value
+                    MCPUpdated = $objRecordset.Fields.Item("MCPUpdated").Value
+                    MCPActivityI = $objRecordset.Fields.Item("MCPActivityI").Value
+                    MCPActivityC = $objRecordset.Fields.Item("MCPActivityC").Value}
 
-#                $mcpObject = New-Object PSObject -Property @{
-#                    MCPAddress = $objRecordset.Fields.Item("MCPAddress").Value
-#                    MCPName = $objRecordset.Fields.Item("MCPName").Value
-#                    MCPMilepost = $objRecordset.Fields.Item("MCPMilepost").Value
-#                    MCPControlMessageNo = $objRecordset.Fields.Item("MCPControlMessageNo").Value
-#                    MCPControlBits = $objRecordset.Fields.Item("MCPControlBits").Value
-#                    MCPControlMnemonics = $objRecordset.Fields.Item("MCPControlMnemonics").Value
-#                    MCPIndicationMessageNo = $objRecordset.Fields.Item("MCPIndicationMessageNo").Value
-#                    MCPIndicationBits = $objRecordset.Fields.Item("MCPIndicationBits").Value
-#                    MCPIndicationMnemonics = $objRecordset.Fields.Item("MCPIndicationMnemonics").Value
-#                    MCPSubdivision = $objRecordset.Fields.Item("MCPSubdivision").Value
-#                    MCPStateCountry = $objRecordset.Fields.Item("MCPStateCountry").Value
-#                    MCPFrequency = $objRecordset.Fields.Item("MCPFrequency").Value
-#                    MCPProtocol = $objRecordset.Fields.Item("MCPProtocol").Value
-#                    MCPResetRoutes = $objRecordset.Fields.Item("MCPResetRoutes").Value
-#                    MCPLongitude = $objRecordset.Fields.Item("MCPLongitude").Value
-#                    MCPLatitude = $objRecordset.Fields.Item("MCPLatitude").Value
-#                    MCPUpdated = $objRecordset.Fields.Item("MCPUpdated").Value
-#                    MCPActivityI = $objRecordset.Fields.Item("MCPActivityI").Value
-#                    MCPActivityC = $objRecordset.Fields.Item("MCPActivityC").Value}
-
-                #$mcpDBData += $mcpObject
+                $mcpDBData += $mcpObject
 
                 $objRecordset.MoveNext()
             } until ($objRecordset.EOF -eq $True)
 
             $objRecordset.Close()
 
-            #$mcpDBData | Format-Table
+            $mcpDBData | Format-Table
 
             Write-Host "Done with the database operations."
         #}
