@@ -40,6 +40,12 @@ Import-Module WDAC
 Set-StrictMode -version 2
 $ErrorActionPreference = "Stop"
 
+$adOpenStatic = 3
+$adLockOptimistic = 3
+$adSchemaTables = 20
+$adSchemaColumns = 4
+
+
 ###############################################################################
 # Use the shell to extract a zip file.
 ###############################################################################
@@ -58,107 +64,74 @@ function Expand-ZIPFile([string]$file, [string]$destination)
     }
 }
 
-Function Connect-Database([string]$database)
+function Get-DatabaseInfo($database)
 {
-    Write-Host "Connecting to the database: " $database
-
-    # Logic should be something like:
-    #   - Open source database.
-    #   - Ensure the MCP table exists.
-    #   - Open destination datbase.
-    #   - Ensure the MCP table exists.
-
-    #   - For each recordset in source database:
-    #   - Add to destination DB
-    #     - What happens if it already exists?  Overwrite or duplicate?
-
-    #   - Do I need to know each column in the MCP db, or, can I just
-    #     pass in a recordset?
-
-    try
+    if ($database)
     {
-        $adOpenStatic = 3
-        $adLockOptimistic = 3
-
-        $adSchemaTables = 20
-        $adSchemaColumns = 4
-
-        $atcsDB = New-Object -ComObject ADODB.Connection
-        $atcsDBProvider = "Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=C:\Users\rerben\Dropbox\ATCSMon-Script-Test\atcsdb.mdb"
-    
-        #$kitUpdateDB = New-Object -ComObject ADODB.Connection
-        #$kitDBProvider = "Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=" + $database
-        #$kitDBProvider = "Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=C:\Users\rerben\Dropbox\ATCSMon\Downloads\Territories\incoming\extract\BNSF-eastwashington-20141118.mdb"
-
-        $atcsDB.Open($kitDBProvider)
-
-        #$objRecordset = $atcsDBProvider.OpenSchema($adSchemaTables)
-        $objRecordset = $atcsDBProvider.OpenSchema($adSchemaColumns)
-        $objRecordset.MoveFirst()
-
-        do 
+        try
         {
-            #if ("TABLE" -eq $objRecordset.Fields.Item("TABLE_TYPE").Value)
-            if ("MCP" -eq $objRecordset.Fields.Item("TABLE_NAME").Value)
+            #$objRecordset = $database.OpenSchema($adSchemaTables)
+            $objRecordset = $database.OpenSchema($adSchemaColumns)
+            $objRecordset.MoveFirst()
+
+            do 
             {
-                Write-Host "Column Name: " $objRecordset.Fields.Item("COLUMN_NAME").Value;
-            }             
-            $objRecordset.MoveNext()
-        } until ($objRecordset.EOF -eq $True)
+                #if ("TABLE" -eq $objRecordset.Fields.Item("TABLE_TYPE").Value)
+                if ("MCP" -eq $objRecordset.Fields.Item("TABLE_NAME").Value)
+                {
+                    Write-Host "Column Name: " $objRecordset.Fields.Item("COLUMN_NAME").Value;
+                }             
+                $objRecordset.MoveNext()
+            } until ($objRecordset.EOF -eq $True)
 
-        $objRecordset.Close()
+            $objRecordset.Close()
 
-        $objRecordset.Open("Select * from MCP", $kitUpdateDB, $adOpenStatic, $adLockOptimistic)
+            $objRecordset.Open("Select * from MCP", $database, $adOpenStatic, $adLockOptimistic)
+            $objRecordset.MoveFirst()
 
-        $objRecordset.MoveFirst()
+            do 
+            {
+                $objRecordset.Fields.Item("MCPAddress").Value; 
+                $objRecordset.MoveNext()
+            } until ($objRecordset.EOF -eq $True)
 
-        do 
+            $objRecordset.Close()
+
+            Write-Host "Done with the database operations."
+
+            #Set rstList = cnnDB.OpenSchema(adSchemaTables)
+            #
+            #   ' Loop through the results and print the
+            #   ' names and types in the Immediate pane.
+            #   With rstList
+            #      Do While Not .EOF
+            #         If .Fields("TABLE_TYPE") <> "VIEW" Then
+            #            Debug.Print .Fields("TABLE_NAME") & vbTab & _
+            #               .Fields("TABLE_TYPE")
+            #         End If
+            #         .MoveNext
+            #      Loop
+            #   End With
+            #   cnnDB.Close
+
+            #$objRecordset.Open("Select * from MCP", $kitUpdateDB,$adOpenStatic,$adLockOptimistic)
+            #$objRecordset.MoveFirst()
+
+            #do 
+            #{
+            #    $objRecordset.Fields.Item("MCPAddress").Value; 
+            #    $objRecordset.MoveNext()
+            #} until ($objRecordset.EOF -eq $True)
+
+            #$objRecordset.Close()
+
+            #$kitUpdateDB.Close()
+        }
+        catch
         {
-            $objRecordset.Fields.Item("MCPAddress").Value; 
-            $objRecordset.MoveNext()
-        } until ($objRecordset.EOF -eq $True)
-
-        $objRecordset.Close()
-
-
-        $atcsDBProvider.Close()
-
-    #Set rstList = cnnDB.OpenSchema(adSchemaTables)
-
-    #   ' Loop through the results and print the
-    #   ' names and types in the Immediate pane.
-    #   With rstList
-    #      Do While Not .EOF
-    #         If .Fields("TABLE_TYPE") <> "VIEW" Then
-    #            Debug.Print .Fields("TABLE_NAME") & vbTab & _
-    #               .Fields("TABLE_TYPE")
-    #         End If
-    #         .MoveNext
-    #      Loop
-    #   End With
-    #   cnnDB.Close
-
-
-        #$objRecordset.Open("Select * from MCP", $kitUpdateDB,$adOpenStatic,$adLockOptimistic)
-
-        #$objRecordset.MoveFirst()
-
-        #do 
-        #{
-        #    $objRecordset.Fields.Item("MCPAddress").Value; 
-        #    $objRecordset.MoveNext()
-        #} until ($objRecordset.EOF -eq $True)
-
-        #$objRecordset.Close()
-
-        #$kitUpdateDB.Close()
+            $Error[0]
+        }
     }
-    catch
-    {
-        $Error[0]
-    }
-
-    Write-Host "Done with the database operations."
 }
 
 function Open-Database([System.IO.FileInfo]$databasePath)
@@ -315,12 +288,23 @@ function HandleMCPs([System.IO.FileInfo]$mcpFile)
         $atcsDBFile = Get-ATCSMonDB
         $atcsDatabase = Open-Database($atcsDBFile)
 
-        #$atcsDatabase.Close()
+        # Logic should be something like:
+        #   - Open source database.
+        #   - Ensure the MCP table exists.
+        #   - Open destination datbase.
+        #   - Ensure the MCP table exists.
+
+        #   - For each recordset in source database:
+        #   - Add to destination DB
+        #     - What happens if it already exists?  Overwrite or duplicate?
+
+        #   - Do I need to know each column in the MCP db, or, can I just
+        #     pass in a recordset?
+
+        Get-DatabaseInfo($atcsDatabase)
 
         Close-Database($atcsDatabase)
     }
-
-    #Connect-Database $mcpFile.FullName
 }
 
 # Ensure the project root exists.
