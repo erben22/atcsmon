@@ -115,7 +115,6 @@ function Get-DatabaseInfo($database)
 
         do
         {
-
             $mcpObject = New-Object PSObject -Property @{
                 MCPAddress = $objRecordset.Fields.Item("MCPAddress").Value
                 MCPName = $objRecordset.Fields.Item("MCPName").Value
@@ -228,7 +227,7 @@ function Import-MCPFile([System.IO.FileInfo]$mcpFile)
 
                 $mcpEntry.Add($currentMCPAddress, $mcpData)
 
-                $mcpData.Clear()
+                $mcpData = @{}
                 $currentMCPIndex = $mcpIndex
             }
 
