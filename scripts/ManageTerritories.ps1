@@ -23,16 +23,16 @@
 
 .NOTES
     AUTHOR: R. Cody Erben
-    LASTEDIT: 20141215
+    LASTEDIT: 20141218
 #>
 
 [CmdletBinding()]
 param (
     [parameter(Mandatory=$false, Position=0)]
-    [string]$territoryRoot = 'C:\Users\rerben\Dropbox\ATCSMon\Downloads\Territories\incoming',
+    [string]$territoryRoot = 'C:\git\atcsmon\scripts\ManageTerritories-TestData',
 
     [parameter(Mandatory=$false, Position=1)]
-    [string]$atcsmonRoot = 'C:\Users\rerben\Dropbox\ATCSMon-Script-Test'
+    [string]$atcsmonRoot = 'C:\git\atcsmon\scripts\ManageTerritories-TestData\ATCSMon-Script-Test'
 )
 
 Import-Module WDAC
@@ -40,10 +40,35 @@ Import-Module WDAC
 Set-StrictMode -version 2
 $ErrorActionPreference = "Stop"
 
+# ADODB enum values.  
+#
+# TODO: Convert into some sort of PowerShell enum?
+
+# Cursor Type Enum values:
+
+$adOpenUnspecified = -1
+$adopenForwardOnly = 0
+$adOpenKeyset = 1
+$adOpenDynamic = 2
 $adOpenStatic = 3
+
+# Lock Type Enum values:
+
+$adLockUnspecified = -1
+$adLockReadOnly = 1
+$adLockPessimistic = 2
 $adLockOptimistic = 3
-$adSchemaTables = 20
-$adSchemaColumns = 4
+$adLockBatchOptimistic = 4
+
+# OpenScehma Enum values:
+
+$adSchemaColumns = 4    # Column information for tables.
+$adSchemaIndexes = 12   # Index information about the tables.
+$adSchemaProcedures = 16    # Stored procedures in the database.
+$adSchemaTables = 20    # Table information in the database.
+$adSchemaProviderTypes = 22 # Provider type information.
+$adSchemaProcedureParameters = 26   # Parameters for stored procedures.
+$adSchemaPrimaryKeys = 28   # Primary keys for tables.
 
 
 ###############################################################################
@@ -68,68 +93,60 @@ function Get-DatabaseInfo($database)
 {
     if ($database)
     {
-        #try
-        #{
-            #$objRecordset = $database.OpenSchema($adSchemaTables)
-            $objRecordset = $database.OpenSchema($adSchemaColumns)
-            $objRecordset.MoveFirst()
+        $objRecordset = $database.OpenSchema($adSchemaColumns)
+        $objRecordset.MoveFirst()
 
-            do
+        do
+        {
+            #if ("TABLE" -eq $objRecordset.Fields.Item("TABLE_TYPE").Value)
+            if ("MCP" -eq $objRecordset.Fields.Item("TABLE_NAME").Value)
             {
-                #if ("TABLE" -eq $objRecordset.Fields.Item("TABLE_TYPE").Value)
-                if ("MCP" -eq $objRecordset.Fields.Item("TABLE_NAME").Value)
-                {
-                    Write-Host "Column Name: " $objRecordset.Fields.Item("COLUMN_NAME").Value
-                }
-                $objRecordset.MoveNext()
-            } until ($objRecordset.EOF -eq $True)
+                Write-Host "Column Name: " $objRecordset.Fields.Item("COLUMN_NAME").Value
+            }
+            $objRecordset.MoveNext()
+        } until ($objRecordset.EOF -eq $True)
 
-            $objRecordset.Close()
+        $objRecordset.Close()
 
-            $objRecordset.Open("Select * from MCP", $database, $adOpenStatic, $adLockOptimistic)
-            $objRecordset.MoveFirst()
+        $objRecordset.Open("Select * from MCP", $database, $adOpenStatic, $adLockOptimistic)
+        $objRecordset.MoveFirst()
 
-            $mcpDBData = @()
+        $mcpDBData = @()
 
-            do
-            {
+        do
+        {
 
-                $mcpObject = New-Object PSObject -Property @{
-                    MCPAddress = $objRecordset.Fields.Item("MCPAddress").Value
-                    MCPName = $objRecordset.Fields.Item("MCPName").Value
-                    MCPMilepost = $objRecordset.Fields.Item("MCPMilepost").Value
-                    MCPControlMessageNo = $objRecordset.Fields.Item("MCPControlMessageNo").Value
-                    MCPControlBits = $objRecordset.Fields.Item("MCPControlBits").Value
-                    MCPControlMnemonics = $objRecordset.Fields.Item("MCPControlMnemonics").Value
-                    MCPIndicationMessageNo = $objRecordset.Fields.Item("MCPIndicationMessageNo").Value
-                    MCPIndicationBits = $objRecordset.Fields.Item("MCPIndicationBits").Value
-                    MCPIndicationMnemonics = $objRecordset.Fields.Item("MCPIndicationMnemonics").Value
-                    MCPSubdivision = $objRecordset.Fields.Item("MCPSubdivision").Value
-                    MCPStateCounty = $objRecordset.Fields.Item("MCPStateCounty").Value
-                    MCPFrequency = $objRecordset.Fields.Item("MCPFrequency").Value
-                    MCPProtocol = $objRecordset.Fields.Item("MCPProtocol").Value
-                    MCPResetRoutes = $objRecordset.Fields.Item("MCPResetRoutes").Value
-                    MCPLongitude = $objRecordset.Fields.Item("MCPLongitude").Value
-                    MCPLatitude = $objRecordset.Fields.Item("MCPLatitude").Value
-                    MCPUpdated = $objRecordset.Fields.Item("MCPUpdated").Value
-                    MCPActivityI = $objRecordset.Fields.Item("MCPActivityI").Value
-                    MCPActivityC = $objRecordset.Fields.Item("MCPActivityC").Value}
+            $mcpObject = New-Object PSObject -Property @{
+                MCPAddress = $objRecordset.Fields.Item("MCPAddress").Value
+                MCPName = $objRecordset.Fields.Item("MCPName").Value
+                MCPMilepost = $objRecordset.Fields.Item("MCPMilepost").Value
+                MCPControlMessageNo = $objRecordset.Fields.Item("MCPControlMessageNo").Value
+                MCPControlBits = $objRecordset.Fields.Item("MCPControlBits").Value
+                MCPControlMnemonics = $objRecordset.Fields.Item("MCPControlMnemonics").Value
+                MCPIndicationMessageNo = $objRecordset.Fields.Item("MCPIndicationMessageNo").Value
+                MCPIndicationBits = $objRecordset.Fields.Item("MCPIndicationBits").Value
+                MCPIndicationMnemonics = $objRecordset.Fields.Item("MCPIndicationMnemonics").Value
+                MCPSubdivision = $objRecordset.Fields.Item("MCPSubdivision").Value
+                MCPStateCounty = $objRecordset.Fields.Item("MCPStateCounty").Value
+                MCPFrequency = $objRecordset.Fields.Item("MCPFrequency").Value
+                MCPProtocol = $objRecordset.Fields.Item("MCPProtocol").Value
+                MCPResetRoutes = $objRecordset.Fields.Item("MCPResetRoutes").Value
+                MCPLongitude = $objRecordset.Fields.Item("MCPLongitude").Value
+                MCPLatitude = $objRecordset.Fields.Item("MCPLatitude").Value
+                MCPUpdated = $objRecordset.Fields.Item("MCPUpdated").Value
+                MCPActivityI = $objRecordset.Fields.Item("MCPActivityI").Value
+                MCPActivityC = $objRecordset.Fields.Item("MCPActivityC").Value}
 
-                $mcpDBData += $mcpObject
+            $mcpDBData += $mcpObject
 
-                $objRecordset.MoveNext()
-            } until ($objRecordset.EOF -eq $True)
+            $objRecordset.MoveNext()
+        } until ($objRecordset.EOF -eq $True)
 
-            $objRecordset.Close()
+        $objRecordset.Close()
 
-            $mcpDBData | Format-Table
+        $mcpDBData | Format-Table
 
-            Write-Host "Done with the database operations."
-        #}
-        #catch
-        #{
-        #    Write-Error "Error occured: $_"
-        #}
+        Write-Host "Done with the database operations."
     }
 }
 
@@ -251,15 +268,15 @@ function Import-MCPFile([System.IO.FileInfo]$mcpFile)
 
     #Write-Host "Done processing MCP file.  mcpEntry data:"
 
-    #foreach ($entry in $mcpEntry.GetEnumerator())
-    #{
-    #    Write-Host "$($entry.Name): $($entry.Value)"
-    #
-    #    foreach ($valueEntry in $entry.value.GetEnumerator())
-    #    {
-    #        Write-Host "    $($valueEntry.Name): $($valueEntry.Value)"
-    #    }
-    #}
+    foreach ($entry in $mcpEntry.GetEnumerator())
+    {
+        Write-Host "$($entry.Name): $($entry.Value)"
+    
+        foreach ($valueEntry in $entry.value.GetEnumerator())
+        {
+            Write-Host "    $($valueEntry.Name): $($valueEntry.Value)"
+        }
+    }
 
     # Return the mcpEntry collection to the caller.
 
@@ -274,6 +291,42 @@ function Get-ATCSMonDB()
     }
 }
 
+function Update-Database([hashtable] $mcpCollection, $database)
+{
+    if ($mcpCollection -And $database)
+    {
+        # Database should be opened.  Would be nice to see if it is not, 
+        # perhaps use a try/catch to detect that.
+
+        $objRecordset = New-Object -ComObject "ADODB.Recordset"
+        $objRecordset.Open("Select * from MCP", $database, $adOpenKeyset, $adLockOptimistic)
+
+        foreach ($entry in $mcpCollection.GetEnumerator())
+        {
+            $objRecordset.AddNew()
+ 
+            foreach ($valueEntry in $entry.value.GetEnumerator())
+            {
+                Write-Host "    $($valueEntry.Name): $($valueEntry.Value)"
+                $objRecordset.Fields.Item($valueEntry.Name).Value = $valueEntry.Value
+            }
+
+            try
+            {
+                $objRecordset.Update()
+            }
+            catch 
+            {
+                #$objRecordset.Close()
+                Write-Error "Failed to add record for $($entry.Value.MCPAddress)"
+                throw $Error[0].Exception
+            }
+        }
+
+        $objRecordset.Close()
+    }
+}
+
 function HandleMCPs([System.IO.FileInfo]$mcpFile)
 {
     Write-Host "Processing an MCP/MDB file: " $mcpFile.FullName
@@ -284,25 +337,37 @@ function HandleMCPs([System.IO.FileInfo]$mcpFile)
 
         $mcpCollection = Import-MCPFile $mcpFile
 
-        $atcsDBFile = Get-ATCSMonDB
-        $atcsDatabase = Open-Database($atcsDBFile)
+        try 
+        {
+            $atcsDBFile = Get-ATCSMonDB
+            $atcsDatabase = Open-Database $atcsDBFile
 
-        # Logic should be something like:
-        #   - Open source database.
-        #   - Ensure the MCP table exists.
-        #   - Open destination datbase.
-        #   - Ensure the MCP table exists.
+            # Logic should be something like:
+            #   - Open source database.
+            #   - Ensure the MCP table exists.
+            #   - Open destination datbase.
+            #   - Ensure the MCP table exists.
 
-        #   - For each recordset in source database:
-        #   - Add to destination DB
-        #     - What happens if it already exists?  Overwrite or duplicate?
+            #   - For each recordset in source database:
+            #   - Add to destination DB
+            #     - What happens if it already exists?  Overwrite or duplicate?
 
-        #   - Do I need to know each column in the MCP db, or, can I just
-        #     pass in a recordset?
+            #   - Do I need to know each column in the MCP db, or, can I just
+            #     pass in a recordset?
 
-        Get-DatabaseInfo($atcsDatabase)
+            Get-DatabaseInfo $atcsDatabase
 
-        Close-Database($atcsDatabase)
+            Update-Database $mcpCollection $atcsDatabase
+
+            Get-DatabaseInfo $atcsDatabase
+
+            Close-Database $atcsDatabase
+        }
+        catch 
+        {
+            Close-Database $atcsDatabase
+            throw $Error[0].Exception
+        }
     }
 }
 
@@ -351,6 +416,10 @@ try
 }
 catch
 {
+    # TODO
+    # Need to cleanup any DB connections.  Push this up into# methods 
+    # using the database.
+
     Write-Error $_
     [System.Environment]::Exit(1)
 }
