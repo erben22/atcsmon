@@ -19,3 +19,8 @@
 *.exe
 *.out
 *.app
+
+# Ruby and OSX things.
+*.DS_Store
+*.idea
+*.lock
