@@ -43,4 +43,6 @@ puts territory_files
 territory_files.each do |territory_path|
   territory = ATCSMonTerritory.new(territory_path)
   territory.extract_territory()
+  territory.get_territory_details()
 end
+
