@@ -2,6 +2,7 @@ class ATCSMonTerritory
   require './read_mdb.rb'
   require 'fileutils'
   require 'zip'
+  require 'pathname'
 
   attr_accessor :territory_path
 
@@ -23,7 +24,10 @@ class ATCSMonTerritory
       zip_file.restore_times = true
       zip_file.each do |entry|
         puts "  entry is #{entry.name}, size = #{entry.size}, compressed size = #{entry.compressed_size}"
+        puts "  entry.time: #{entry.time}"
+
         entry.extract(File.join(@extract_dir, entry.name))
+        File.utime(entry.time, entry.time, File.join(@extract_dir, entry.name))
       end
     end
 
