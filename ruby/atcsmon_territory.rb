@@ -1,16 +1,43 @@
+class TerritoryDetailData
+  attr_accessor :key_name, :file_pattern, :extract_subdir
+
+  def initialize(key_name, file_pattern, extract_subdir)
+    @key_name = key_name
+    @file_pattern = file_pattern
+    @extract_subdir = extract_subdir
+  end
+
+end
+
 class ATCSMonTerritory
   require './read_mdb.rb'
   require 'fileutils'
   require 'zip'
   require 'pathname'
 
-  attr_accessor :territory_path
+  attr_accessor :territory_path # Needed?
 
   def initialize(territory_path, atcsmon_dir)
     @territory_path = territory_path
     @extract_dir = ''
     @territory_details = {}
     @atcsmon_dir = atcsmon_dir
+
+    @territory_data = [
+        TerritoryDetailData.new(:mdb_file, '*.mdb', 'MCPs/'),
+        TerritoryDetailData.new(:mcp_file, '*.mcp', 'MCPs/'),
+        TerritoryDetailData.new(:layout_file, '*.lay', 'Layouts/'),
+        TerritoryDetailData.new(:text_file, '{[!readme]}*.txt', 'Layouts/'),
+        TerritoryDetailData.new(:ini_file, '*.ini', ''),
+        TerritoryDetailData.new(:readme_file, 'readme*.txt', ''),
+        TerritoryDetailData.new(:kmz_file, '*.kmz', 'kmz/'),
+        TerritoryDetailData.new(:doc_file, '*.doc', 'doc/'),
+        TerritoryDetailData.new(:pdf_file, '*.pdf', 'pdf/'),
+        TerritoryDetailData.new(:rtf, '*.rtf', 'rtf/'),
+        TerritoryDetailData.new(:spreadsheet_file, '*.xls', 'xls/'),
+        TerritoryDetailData.new(:fonts, '*.ttf', 'Fonts/'),
+        TerritoryDetailData.new(:sound, '*.wav', 'wav/'),
+    ]
   end
 
   def extract_territory()
@@ -35,24 +62,10 @@ class ATCSMonTerritory
   def get_territory_details()
     @territory_details = {}
 
-    @territory_details[:mdb_file] = Dir.glob(File.join(@extract_dir, '*.mdb'))
-    @territory_details[:mcp_file] = Dir.glob(File.join(@extract_dir, '*.mcp'))
-
-    @territory_details[:layout_file] = Dir.glob(File.join(@extract_dir, '*.lay'))
-    @territory_details[:text_file] = Dir.glob(File.join(@extract_dir, '{[!readme]}*.txt'))
-
-    @territory_details[:ini_file] = Dir.glob(File.join(@extract_dir, '*.ini'))
-    @territory_details[:readme_file] = Dir.glob(File.join(@extract_dir, 'readme*.txt'))
-
-    @territory_details[:kmz_file] = Dir.glob(File.join(@extract_dir, '*.kmz'))
-
-    @territory_details[:doc_file] = Dir.glob(File.join(@extract_dir, '*.doc'))
-    @territory_details[:pdf_file] = Dir.glob(File.join(@extract_dir, '*.pdf'))
-    @territory_details[:rtf] = Dir.glob(File.join(@extract_dir, '*.rtf'))
-    @territory_details[:spreadsheet_file] = Dir.glob(File.join(@extract_dir, '*.xls'))
-
-    @territory_details[:fonts] = Dir.glob(File.join(@extract_dir, '*.ttf'))
-    @territory_details[:sound] = Dir.glob(File.join(@extract_dir, '*.wav'))
+    @territory_data.each do |territorydata|
+      @territory_details[territorydata.key_name] = 
+        Dir.glob(File.join(@extract_dir, territorydata.file_pattern))
+    end
 
     @territory_details
   end
@@ -63,60 +76,16 @@ class ATCSMonTerritory
 
     return unless File.exists?(@atcsmon_dir)
 
-    # Stage the MCP database.  This can be either an MDB file,
-    # or a text-based version in an MCP file.
+    @territory_data.each do |territorydata|
 
-    @territory_details[:mdb_file].each do |mdbfile|
-      puts "  Processing mdbfile: #{mdbfile}"
-      FileUtils.mkdir_p File.join(@atcsmon_dir, 'MCPs/')
-      FileUtils.cp_r mdbfile, File.join(@atcsmon_dir, 'MCPs/'), :verbose => true, :preserve => true
+      @territory_details[territorydata.key_name].each do |details_data|
+        puts "  Processing details_data: #{details_data}"
+        FileUtils.mkdir_p File.join(@atcsmon_dir, territorydata.extract_subdir)
+        FileUtils.cp_r details_data, 
+          File.join(@atcsmon_dir, territorydata.extract_subdir), 
+            :verbose => true, :preserve => true
+      end
     end
-
-    @territory_details[:mcp_file].each do |mcpfile|
-      puts "  Processing mdbfile: #{mcpfile}"
-      FileUtils.mkdir_p File.join(@atcsmon_dir, 'MCPs/')
-      FileUtils.cp_r mcpfile, File.join(@atcsmon_dir, 'MCPs/'), :verbose => true, :preserve => true
-    end
-
-    # TODO: Now, process the staged MCP database file(s)
-    # and add them to the master database.
-
-    puts "We will be a processing the MDB/MCP file here..."
-
-    # Stage the layout file.
-
-    @territory_details[:layout_file].each do |layoutfile|
-      puts "  Processing layoutfile: #{layoutfile}"
-      FileUtils.mkdir_p File.join(@atcsmon_dir, 'Layouts/')
-      FileUtils.cp_r layoutfile, File.join(@atcsmon_dir, 'Layouts/'), :verbose => true, :preserve => true
-    end
-
-    @territory_details[:text_file].each do |textfile|
-      puts "  Processing textfile: #{textfile}"
-      FileUtils.mkdir_p File.join(@atcsmon_dir, 'Layouts/')
-      FileUtils.cp_r textfile, File.join(@atcsmon_dir, 'Layouts/'), :verbose => true, :preserve => true
-    end
-
-    # Stage the ini file and readme*.txt file in the root dir.
-
-    @territory_details[:ini_file].each do |inifile|
-      puts "  Processing inifile: #{inifile}"
-      FileUtils.cp_r inifile, @atcsmon_dir, :verbose => true, :preserve => true
-    end
-
-    @territory_details[:readme_file].each do |readmefile|
-      puts "  Processing readmefile: #{readmefile}"
-      FileUtils.cp_r readmefile, @atcsmon_dir, :verbose => true, :preserve => true
-    end
-
-    # Got KMZ?  If so, process:
-
-      @territory_details[:kmz_file].each do |kmzfile|
-      puts "  Processing kmzfile: #{kmzfile}"
-      FileUtils.mkdir_p File.join(@atcsmon_dir, 'kmz/')
-      FileUtils.cp_r kmzfile, File.join(@atcsmon_dir, 'kmz/'), :verbose => true, :preserve => true
-    end
-
 
   end
 
