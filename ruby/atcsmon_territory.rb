@@ -40,7 +40,7 @@ class ATCSMonTerritory
     ]
   end
 
-  def extract_territory()
+  def extract_territory
     puts "Extracting territory: #{@territory_path}"
     @extract_dir = File.join(ENV['TMPDIR'], 'ATCSMonTerritoryExtract')
 
@@ -59,7 +59,7 @@ class ATCSMonTerritory
     end
   end
 
-  def get_territory_details()
+  def get_territory_details
     @territory_details = {}
 
     @territory_data.each do |territorydata|
@@ -70,23 +70,28 @@ class ATCSMonTerritory
     @territory_details
   end
 
-  def stage_territory()
+  def stage_territory
 
-    puts @territory_details
+    #puts @territory_details
 
     return unless File.exists?(@atcsmon_dir)
 
     @territory_data.each do |territorydata|
 
       @territory_details[territorydata.key_name].each do |details_data|
-        puts "  Processing details_data: #{details_data}"
+        #puts "  Processing details_data: #{details_data}"
         FileUtils.mkdir_p File.join(@atcsmon_dir, territorydata.extract_subdir)
         FileUtils.cp_r details_data, 
           File.join(@atcsmon_dir, territorydata.extract_subdir), 
-            :verbose => true, :preserve => true
+            :verbose => false, :preserve => true
       end
     end
+  end
 
+  def update_database
+    atcsdb = ATCSDB.new(File.join(@atcsmon_dir, 'ATCSdb.mdb'))
+
+    atcsdb.read_mdb()
   end
 
 end

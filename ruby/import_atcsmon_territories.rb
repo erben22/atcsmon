@@ -9,7 +9,6 @@ def parse_options()
 
   options = {}
   OptionParser.new do |opt|
-    opt.on('--mdb_file MDBFILE') { |o| options[:mdb_file] = o }
     opt.on('--territoryDir ./directory') { |o| options[:territoryDir] = o }
     opt.on('--atcsmonDir ./directory') { |o| options[:atcsmonDir] = o }
   end.parse!
@@ -33,17 +32,20 @@ end
 
 # Main app runner.
 
-require './atcsmon_territory.rb'
+begin
+  require './atcsmon_territory.rb'
 
-cmdline_options = parse_options()
-puts cmdline_options
+  cmdline_options = parse_options()
+  puts cmdline_options
 
-territory_files = find_territories(cmdline_options[:territoryDir])
-puts territory_files
+  territory_files = find_territories(cmdline_options[:territoryDir])
+  puts territory_files
 
-territory_files.each do |territory_path|
-  territory = ATCSMonTerritory.new(territory_path, cmdline_options[:atcsmonDir])
-  territory.extract_territory()
-  territory.get_territory_details()
-  territory.stage_territory()
+  territory_files.each do |territory_path|
+    territory = ATCSMonTerritory.new(territory_path, cmdline_options[:atcsmonDir])
+    territory.extract_territory()
+    territory.get_territory_details()
+    territory.stage_territory()
+    territory.update_database()
+  end
 end
