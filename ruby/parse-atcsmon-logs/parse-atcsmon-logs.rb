@@ -13,23 +13,33 @@ class MythDB
     def connect_database
         puts 'connecting to the database...'
 
-        client = Mysql2::Client.new(:host => "192.168.2.66", :username => "mythtv",
-            :password => "RRw0VDia")
+        @client = Mysql2::Client.new(:host => "localhost", :username => "atcsmon",
+            :password => "atcsmon")
 
-        program_name = "Silicon Valley"
-        subtitle = ""
+        #results = client.query("SELECT * FROM atcsmon.atcsmon WHERE id > 0")
 
-        results = client.query("SELECT chanid,starttime,endtime,originalairdate,basename,title,subtitle FROM mythconverg.recorded WHERE title LIKE \'#{program_name}\'")
-
-        results.each do |row|
+        #results.each do |row|
             # conveniently, row is a hash
             # the keys are the fields, as you'd expect
             # the values are pre-built ruby primitives mapped from their corresponding field types in MySQL
-            puts row["chanid"] # row["id"].class == Fixnum
-            if row["originalairdate"]  # non-existant hash entry is nil
-                puts row["originalairdate"]
-            end
-        end
+        #    output=row["id"] # row["id"].class == Fixnum
+        #    if row["timestamp"]  # non-existant hash entry is nil
+        #        output+=row["timestamp"]
+        #    end
+        #    if row["mnemonic"]  # non-existant hash entry is nil
+        #        output+=row["mnemonic"]
+        #    end
+
+        #    puts output
+        #end
+    end
+
+    def insert_record
+        puts 'Inserting a record into the database...'
+
+        insert_sql = 'INSERT INTO atcsmon.atcsmon (id, timestamp,mnemonic) VALUES(DEFAULT, "2016/06/01 02:22:20", "6738303238333638373005FB030331F6");'
+
+        @client.query insert_sql
     end
 
 end
@@ -41,4 +51,4 @@ end
 ###############################################################################
 mythdb = MythDB.new
 mythdb.connect_database
-
+mythdb.insert_record
