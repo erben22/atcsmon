@@ -1,0 +1,14 @@
+version: '2'
+
+services:
+  atcsmon-db:
+    restart: always
+    image: mariadb
+    container_name: atcsmon-db
+    environment:
+      - MYSQL_ROOT_PASSWORD=dirtybird
+    ports:
+      - 3307:3306
+    volumes:
+      - /Users/erben22/files/scm/git/atcsmon-github/ruby/parse-atcsmon-logs/db-docker-image/conf.d:/etc/mysql/conf.d
+      - /Users/erben22/files/scm/git/atcsmon-github/ruby/parse-atcsmon-logs/db-docker-image/db-storage:/var/lib/mysql
