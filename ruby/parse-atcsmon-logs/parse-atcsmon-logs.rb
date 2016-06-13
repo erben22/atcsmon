@@ -9,6 +9,7 @@
 
 class MythDB
     require 'mysql2'
+    require 'crc32'
 
     def connect_database
         puts 'connecting to the database...'
@@ -47,8 +48,13 @@ class MythDB
         #Control Byte No    $00-$FF
         #Control Byte       $00-$FF
         #(repeat as required)
-        #CRC Low Byte       $00-$FF
-        #CRC High Byte      $00-$FF
+
+        # CRC is a CRC-16 of the Command Byte, Station Number, and each control byte.  
+        # It excludes the CRC-16 and terminator, as well as anything before the command
+        # byte.
+        
+        #CRC (16) Low Byte       $00-$FF
+        #CRC (16) High Byte      $00-$FF
         #Terminator         $F6
 
         #6738303238333638373005FB030331F6
@@ -95,12 +101,12 @@ class MythDB
         #05 - Message Type - 5 - UP Outbound ACK / Poll (3) (Frame 5)
         #FB - Command Byte - 251 - to Wayside Device (251)
         #02 - Station Number - 002
-        #C2 - Control Byte Number - C3
+        #C2 - Control Byte Number - C2
         #F1 - Control Byte
         #F6 - Terminator
+    
 
-
-        #67383032383336383730 07FC05 0006A053F6
+        #67383032383336383730 07FC050006A053F6
         #67 = g (protocol - g - genesis)
         #383032 = 802 (RR id - 802 - UPRR)
         #38 33 36 38 37 = 83687
@@ -110,7 +116,7 @@ class MythDB
         #05 - Station Numer - 005
         #00 - Control Byte Number - 00
         #06 - Control Bytes - Mnemonics - 06 - 0110
-        #A0 - CRC Low Byte
+        #A0 - CRC Low Byte   - CRC
         #53 - CRC High Byte
         #F6 - Terminator
 
@@ -122,9 +128,10 @@ class MythDB
         #0000 0000 0000  0   1   1   0
 
 
-
-
         @client.query insert_sql
+
+        Crc32.calculate('12397538', 8, 0)
+
     end
 
 end
