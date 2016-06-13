@@ -9,7 +9,7 @@
 
 class MythDB
     require 'mysql2'
-    require 'crc32'
+    require 'digest/crc32'
 
     def connect_database
         puts 'connecting to the database...'
@@ -106,7 +106,7 @@ class MythDB
         #F6 - Terminator
     
 
-        #67383032383336383730 07FC050006A053F6
+        #67383032383336383730 07 FC050006 A053F6
         #67 = g (protocol - g - genesis)
         #383032 = 802 (RR id - 802 - UPRR)
         #38 33 36 38 37 = 83687
@@ -128,9 +128,13 @@ class MythDB
         #0000 0000 0000  0   1   1   0
 
 
-        @client.query insert_sql
+        data = "FC050006"
+        decoded_data = [data].pack('H*')
+        
+        puts "CRC-16 of #{data} is " + Digest::CRC16.hexdigest(decoded_data)
 
-        Crc32.calculate('12397538', 8, 0)
+
+        @client.query insert_sql
 
     end
 
