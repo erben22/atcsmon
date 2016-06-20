@@ -195,6 +195,8 @@ class MCPData
 
     TERMINATOR_SIZE = 2
 
+    attr_reader :station_id
+
     def get_protocol
         @protocol = @mcp_data[PROTOCOL_START_POSITION..(PROTOCOL_START_POSITION + PROTOCOL_SIZE - 1)]
     end
@@ -241,8 +243,8 @@ class MCPData
         crc16_low_byte_start_position = @mcp_data.length - TERMINATOR_SIZE - CRC16_HIGH_BYTE_SIZE - CRC16_LOW_BYTE_SIZE
         crc16_high_byte_start_position = @mcp_data.length - TERMINATOR_SIZE - CRC16_HIGH_BYTE_SIZE
 
-        crc16_low_byte = @mcp_data[crc16_low_byte_start_position..(crc16_low_byte_start_position + CRC16_LOW_BYTE_SIZE - 1)].to_i.to_s(16)
-        crc16_high_byte = @mcp_data[crc16_high_byte_start_position..(crc16_high_byte_start_position + CRC16_HIGH_BYTE_SIZE - 1)].to_i.to_s(16)
+        crc16_low_byte = @mcp_data[crc16_low_byte_start_position..(crc16_low_byte_start_position + CRC16_LOW_BYTE_SIZE - 1)]
+        crc16_high_byte = @mcp_data[crc16_high_byte_start_position..(crc16_high_byte_start_position + CRC16_HIGH_BYTE_SIZE - 1)]
 
         puts "crc16_low_byte_start_position is #{crc16_low_byte_start_position}"
         puts "crc16_high_byte_start_position is #{crc16_high_byte_start_position}"
@@ -250,9 +252,7 @@ class MCPData
         puts "crc16_low_byte is #{crc16_low_byte}"
         puts "crc16_high_byte is #{crc16_high_byte}"
 
-        #new_crc = [crc16_high_byte, crc16_low_byte]
-
-        #@crc16 = new_crc.pack('C*').unpack('L')[0]
+        @crc16 = "0x#{crc16_high_byte}#{crc16_low_byte}".to_i(16).to_s(16)
     end
 
     def get_terminator
