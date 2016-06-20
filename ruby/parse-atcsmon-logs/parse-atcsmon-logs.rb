@@ -10,7 +10,6 @@
 class MCPData
     require 'digest/crc32'
     
-
     #LAYOUT:
     #Comand Byte        $FC
     #Station Number     $01-$FF
@@ -163,6 +162,10 @@ class MCPData
     #Number=0.0.252 Genisys_Control_Message
     #Mnemonics=C17,C11,C24,C22
     #00 41
+
+
+    # Maybe the message type -- 5 is an ack, anything above that is the number of control bytes we have?
+
 
     PROTOCOL_START_POSITION = 0
     PROTOCOL_SIZE = 2
