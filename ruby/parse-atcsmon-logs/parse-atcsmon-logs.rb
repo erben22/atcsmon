@@ -227,16 +227,20 @@ class MCPData
 
     def get_control_bytes
         control_bytes_size = @mcp_data.length - CONTROL_BYTE_START_POSITION - CRC16_LOW_BYTE_SIZE - CRC16_HIGH_BYTE_SIZE - TERMINATOR_SIZE
+        control_bytes_size2 = (@message_type.to_i - 5) * 2 # Message type minus 5 is the number of controls...2 bytes per control.
+
+        if (control_bytes_size != control_bytes_size2)
+            puts "ERROR: Mismatch between control_bytes_size (#{control_bytes_size}) and control_bytes_size2 (#{control_bytes_size2})"
+        end
 
         if (control_bytes_size > 0)
-            @control_bytes = [@mcp_data[CONTROL_BYTE_START_POSITION..(CONTROL_BYTE_START_POSITION + control_bytes_size - 1)]].pack('H*')
+            #@control_bytes = [@mcp_data[CONTROL_BYTE_START_POSITION..(CONTROL_BYTE_START_POSITION + control_bytes_size - 1)]].pack('H*')
+            @control_bytes = [@mcp_data[CONTROL_BYTE_START_POSITION..(CONTROL_BYTE_START_POSITION + control_bytes_size2 - 1)]]
         end
 
         puts "control_bytes_size is #{control_bytes_size}"
         puts "@mcp_data.length is #{@mcp_data.length}"
         puts "CONTROL_BYTE_START_POSITION is #{CONTROL_BYTE_START_POSITION}"
-
-        calculate_crc16("FB03")
     end
 
     def get_crc16
@@ -260,6 +264,13 @@ class MCPData
         @terminator = @mcp_data[terminator_start_position..(terminator_start_position + TERMINATOR_SIZE - 1)]
     end
 
+    def get_calculated_crc16
+        crc_string = @command_type + "%02d" % @station_id.to_s + (@control_bytes.nil? ? "" : @control_bytes.pack('A*'))
+        puts "Data string of the command type, station id, and if applicable, control bytes is: #{crc_string}"
+
+        @calculated_crc16 = calculate_crc16(crc_string)
+    end
+
     def initialize(mcp_data)
         @mcp_data = mcp_data
         
@@ -275,6 +286,8 @@ class MCPData
         get_crc16
         get_terminator
 
+        get_calculated_crc16
+
         parse_mcp
     end
 
@@ -285,6 +298,7 @@ class MCPData
             return
         end
         
+        puts "###############################"
         puts "Protocol is #{@protocol}"
         puts "Railroad is #{@railroad}"
         puts "Zip is #{@zip}"
@@ -294,11 +308,14 @@ class MCPData
         puts "Station ID is #{@station_id}"
         puts "Control bytes is #{@control_bytes}"
         puts "CRC16 is #{@crc16}"
+        puts "Calculated CRC16 is #{@calculated_crc16}"
         puts "Terminator is #{@terminator}"
+        puts "###############################"
          
     end
 
     def calculate_crc16(data)
+        puts "data to crc16 is: #{data}"
         decoded_data = [data].pack('H*')
         puts "CRC-16 of #{data} is " + Digest::CRC16.hexdigest(decoded_data)
         Digest::CRC16.hexdigest(decoded_data)
@@ -353,8 +370,19 @@ end
 # Main entry point for the app...
 # 
 ###############################################################################
+puts "****************************************************"
 mcpData = MCPData.new("6738303238333638373005FB030331F6")
+puts "****************************************************"
+
+puts "****************************************************"
+mcpData = MCPData.new("6738303238333638373007FC050006A053F6")
+puts "****************************************************"
+
+puts "****************************************************"
+mcpData = MCPData.new("6738303238333638373009FC050003010029ACF6")
+puts "****************************************************"
 #mcpData.test_tnit
+
 
 mythdb = MythDB.new
 mythdb.connect_database
