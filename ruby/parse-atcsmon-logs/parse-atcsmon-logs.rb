@@ -233,14 +233,16 @@ class MCPData
             puts "ERROR: Mismatch between control_bytes_size (#{control_bytes_size}) and control_bytes_size2 (#{control_bytes_size2})"
         end
 
+        #puts "control_bytes_size is #{control_bytes_size}"
+        #puts "@mcp_data.length is #{@mcp_data.length}"
+        #puts "CONTROL_BYTE_START_POSITION is #{CONTROL_BYTE_START_POSITION}"
+
         if (control_bytes_size > 0)
             #@control_bytes = [@mcp_data[CONTROL_BYTE_START_POSITION..(CONTROL_BYTE_START_POSITION + control_bytes_size - 1)]].pack('H*')
             @control_bytes = [@mcp_data[CONTROL_BYTE_START_POSITION..(CONTROL_BYTE_START_POSITION + control_bytes_size2 - 1)]]
+        else
+            @control_bytes = [""]
         end
-
-        puts "control_bytes_size is #{control_bytes_size}"
-        puts "@mcp_data.length is #{@mcp_data.length}"
-        puts "CONTROL_BYTE_START_POSITION is #{CONTROL_BYTE_START_POSITION}"
     end
 
     def get_crc16
@@ -250,11 +252,11 @@ class MCPData
         crc16_low_byte = @mcp_data[crc16_low_byte_start_position..(crc16_low_byte_start_position + CRC16_LOW_BYTE_SIZE - 1)]
         crc16_high_byte = @mcp_data[crc16_high_byte_start_position..(crc16_high_byte_start_position + CRC16_HIGH_BYTE_SIZE - 1)]
 
-        puts "crc16_low_byte_start_position is #{crc16_low_byte_start_position}"
-        puts "crc16_high_byte_start_position is #{crc16_high_byte_start_position}"
+        #puts "crc16_low_byte_start_position is #{crc16_low_byte_start_position}"
+        #puts "crc16_high_byte_start_position is #{crc16_high_byte_start_position}"
 
-        puts "crc16_low_byte is #{crc16_low_byte}"
-        puts "crc16_high_byte is #{crc16_high_byte}"
+        #puts "crc16_low_byte is #{crc16_low_byte}"
+        #puts "crc16_high_byte is #{crc16_high_byte}"
 
         @crc16 = "0x#{crc16_high_byte}#{crc16_low_byte}".to_i(16).to_s(16)
     end
@@ -266,7 +268,7 @@ class MCPData
 
     def get_calculated_crc16
         crc_string = @command_type + "%02d" % @station_id.to_s + (@control_bytes.nil? ? "" : @control_bytes.pack('A*'))
-        puts "Data string of the command type, station id, and if applicable, control bytes is: #{crc_string}"
+        #puts "Data string of the command type, station id, and if applicable, control bytes is: #{crc_string}"
 
         @calculated_crc16 = calculate_crc16(crc_string)
     end
@@ -298,26 +300,29 @@ class MCPData
             return
         end
         
-        puts "###############################"
-        puts "Protocol is #{@protocol}"
-        puts "Railroad is #{@railroad}"
-        puts "Zip is #{@zip}"
-        puts "Zip Suffix is #{@zip_suffix}"
-        puts "Message type is #{@message_type}"
-        puts "Command type is #{@command_type}"
-        puts "Station ID is #{@station_id}"
-        puts "Control bytes is #{@control_bytes}"
-        puts "CRC16 is #{@crc16}"
-        puts "Calculated CRC16 is #{@calculated_crc16}"
-        puts "Terminator is #{@terminator}"
-        puts "###############################"
+        puts "#    #{@protocol}    #    #{@railroad}   # #{@zip} #   #{@zip_suffix}    #   #{@message_type}    #   #{@command_type}    #    #{@station_id}    #  #{@crc16}  #    #{@calculated_crc16}    #     #{@terminator}     # #{@control_bytes.pack('A*')}"
+
+        #puts "###############################"
+        #puts "Protocol is #{@protocol}"
+        #puts "Railroad is #{@railroad}"
+        #puts "Zip is #{@zip}"
+        #puts "Zip Suffix is #{@zip_suffix}"
+        #puts "Message type is #{@message_type}"
+        #puts "Command type is #{@command_type}"
+        #puts "Station ID is #{@station_id}"
+        #puts "Control bytes is #{@control_bytes}"
+        #puts "CRC16 is #{@crc16}"
+        #puts "Calculated CRC16 is #{@calculated_crc16}"
+        #puts "CRC comparison error" if @crc16 != @calculated_crc16
+        #puts "Terminator is #{@terminator}"
+        #puts "###############################"
          
     end
 
     def calculate_crc16(data)
-        puts "data to crc16 is: #{data}"
+        #puts "data to crc16 is: #{data}"
         decoded_data = [data].pack('H*')
-        puts "CRC-16 of #{data} is " + Digest::CRC16.hexdigest(decoded_data)
+        #puts "CRC-16 of #{data} is " + Digest::CRC16.hexdigest(decoded_data)
         Digest::CRC16.hexdigest(decoded_data)
     end
 end
@@ -370,17 +375,14 @@ end
 # Main entry point for the app...
 # 
 ###############################################################################
-puts "****************************************************"
+puts "#####################################################################################################################"
+puts "# Protocol # Railroad #  Zip  #  Zip   # Message # Command # Station # CRC16  # Calculated # Terminator # Control"
+puts "#          #          #       # Suffix #  Type   #  Type   #   ID    #        #    CRC16   #            #  Bytes"
+puts "#####################################################################################################################"
 mcpData = MCPData.new("6738303238333638373005FB030331F6")
-puts "****************************************************"
-
-puts "****************************************************"
 mcpData = MCPData.new("6738303238333638373007FC050006A053F6")
-puts "****************************************************"
-
-puts "****************************************************"
 mcpData = MCPData.new("6738303238333638373009FC050003010029ACF6")
-puts "****************************************************"
+puts "#####################################################################################################################"
 #mcpData.test_tnit
 
 
