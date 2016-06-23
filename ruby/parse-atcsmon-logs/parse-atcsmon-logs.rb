@@ -258,7 +258,10 @@ class MCPData
         #puts "crc16_low_byte is #{crc16_low_byte}"
         #puts "crc16_high_byte is #{crc16_high_byte}"
 
-        @crc16 = "0x#{crc16_high_byte}#{crc16_low_byte}".to_i(16).to_s(16)
+        #@crc16 = "0x#{crc16_high_byte}#{crc16_low_byte}".to_i(16).to_s(16)
+
+        #@crc16 = ("%01d" % "0x#{crc16_high_byte}#{crc16_low_byte}".to_i(16)).to_s(16)
+        @crc16 = [crc16_high_byte + crc16_low_byte].pack('A*')
     end
 
     def get_terminator
@@ -300,7 +303,12 @@ class MCPData
             return
         end
         
-        puts "#    #{@protocol}    #    #{@railroad}   # #{@zip} #   #{@zip_suffix}    #   #{@message_type}    #   #{@command_type}    #    #{@station_id}    #  #{@crc16}  #    #{@calculated_crc16}    #     #{@terminator}     # #{@control_bytes.pack('A*')}"
+        
+        puts "| %-8s | %-8d | %-6d | %-6d | %-7s | %-7s | %-8s | %-6s | %-10s | %-10s | %-16s |" %
+            [@protocol, @railroad, @zip, @zip_suffix, @message_type, @command_type, "%03d" % @station_id, @crc16, @calculated_crc16, @terminator, @control_bytes.pack('A*')]
+        
+        #puts "# #{@protocol}    #    #{@railroad}   # #{@zip} #   #{@zip_suffix}    #   #{@message_type}    #   #{@command_type}    #    #{@station_id}    #  #{@crc16}  #    #{@calculated_crc16}    #     #{@terminator}     # #{@control_bytes.pack('A*')}"
+        #puts name.ljust(20) + age.to_s.ljust(10) + "test"
 
         #puts "###############################"
         #puts "Protocol is #{@protocol}"
@@ -375,14 +383,29 @@ end
 # Main entry point for the app...
 # 
 ###############################################################################
-puts "#####################################################################################################################"
-puts "# Protocol # Railroad #  Zip  #  Zip   # Message # Command # Station # CRC16  # Calculated # Terminator # Control"
-puts "#          #          #       # Suffix #  Type   #  Type   #   ID    #        #    CRC16   #            #  Bytes"
-puts "#####################################################################################################################"
-mcpData = MCPData.new("6738303238333638373005FB030331F6")
-mcpData = MCPData.new("6738303238333638373007FC050006A053F6")
-mcpData = MCPData.new("6738303238333638373009FC050003010029ACF6")
-puts "#####################################################################################################################"
+
+puts "##############################################################################################################################"
+puts "| %-8s | %-8s | %-6s | %-6s | %-7s | %-7s | %-8s | %-6s | %-10s | %-10s | %-16s |" %
+    ["Protocol", "Railroad", "Zip", "Zip", "Message", "Command", "Station", "CRC16", "Calculated", "Terminator", "Control"]
+puts "| %8s | %-8s | %-6s | %-6s | %-7s | %-7s | %-8s | %-6s | %-10s | %-10s | %-16s |" %
+    ["", "", "", "Suffix", "Type", "Type", "ID", "", "CRC16", "", "Bytes"]
+puts "##############################################################################################################################"
+
+File.open('./UP-Huntington-Sub-and-Nampa-Sub-Nampa-BCP20160517-testing.log').each do |line|
+    #puts "MCP data is: #{line.split(' ')[2]}"
+    #puts "Line.length: #{line.length}"
+    
+    if line.length > 2
+        mcpData = MCPData.new(line.split(' ')[2])
+    end
+end
+
+puts "##############################################################################################################################"
+
+#mcpData = MCPData.new("6738303238333638373005FB030331F6")
+#mcpData = MCPData.new("6738303238333638373007FC050006A053F6")
+#mcpData = MCPData.new("6738303238333638373009FC050003010029ACF6")
+
 #mcpData.test_tnit
 
 
