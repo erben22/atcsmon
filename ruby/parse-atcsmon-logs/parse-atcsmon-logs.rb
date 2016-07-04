@@ -292,8 +292,6 @@ class MCPData
         get_terminator
 
         get_calculated_crc16
-
-        parse_mcp
     end
 
     def parse_mcp
@@ -303,28 +301,15 @@ class MCPData
             return
         end
         
-        
         puts "| %-8s | %-8d | %-6d | %-6d | %-7s | %-7s | %-8s | %-6s | %-10s | %-10s | %-16s |" %
-            [@protocol, @railroad, @zip, @zip_suffix, @message_type, @command_type, "%03d" % @station_id, @crc16, @calculated_crc16, @terminator, @control_bytes.pack('A*')]
-        
-        #puts "# #{@protocol}    #    #{@railroad}   # #{@zip} #   #{@zip_suffix}    #   #{@message_type}    #   #{@command_type}    #    #{@station_id}    #  #{@crc16}  #    #{@calculated_crc16}    #     #{@terminator}     # #{@control_bytes.pack('A*')}"
-        #puts name.ljust(20) + age.to_s.ljust(10) + "test"
+            [@protocol, @railroad, @zip, @zip_suffix, @message_type, @command_type, "%03d" % @station_id, 
+                @crc16, @calculated_crc16.upcase, @terminator, @control_bytes.pack('A*')]
+    end
 
-        #puts "###############################"
-        #puts "Protocol is #{@protocol}"
-        #puts "Railroad is #{@railroad}"
-        #puts "Zip is #{@zip}"
-        #puts "Zip Suffix is #{@zip_suffix}"
-        #puts "Message type is #{@message_type}"
-        #puts "Command type is #{@command_type}"
-        #puts "Station ID is #{@station_id}"
-        #puts "Control bytes is #{@control_bytes}"
-        #puts "CRC16 is #{@crc16}"
-        #puts "Calculated CRC16 is #{@calculated_crc16}"
-        #puts "CRC comparison error" if @crc16 != @calculated_crc16
-        #puts "Terminator is #{@terminator}"
-        #puts "###############################"
-         
+    def parse_control_bytes
+        puts "Parsing control bytes for #{@mcp_data}"
+        puts "  Control bytes: #{@control_bytes}" unless @control_bytes[0].empty?
+
     end
 
     def calculate_crc16(data)
@@ -383,31 +368,39 @@ end
 # Main entry point for the app...
 # 
 ###############################################################################
+dump_all = false
 
-puts "##############################################################################################################################"
-puts "| %-8s | %-8s | %-6s | %-6s | %-7s | %-7s | %-8s | %-6s | %-10s | %-10s | %-16s |" %
-    ["Protocol", "Railroad", "Zip", "Zip", "Message", "Command", "Station", "CRC16", "Calculated", "Terminator", "Control"]
-puts "| %8s | %-8s | %-6s | %-6s | %-7s | %-7s | %-8s | %-6s | %-10s | %-10s | %-16s |" %
-    ["", "", "", "Suffix", "Type", "Type", "ID", "", "CRC16", "", "Bytes"]
-puts "##############################################################################################################################"
+if dump_all
+    puts "##############################################################################################################################"
+    puts "| %-8s | %-8s | %-6s | %-6s | %-7s | %-7s | %-8s | %-6s | %-10s | %-10s | %-16s |" %
+        ["Protocol", "Railroad", "Zip", "Zip", "Message", "Command", "Station", "CRC16", "Calculated", "Terminator", "Control"]
+    puts "| %8s | %-8s | %-6s | %-6s | %-7s | %-7s | %-8s | %-6s | %-10s | %-10s | %-16s |" %
+        ["", "", "", "Suffix", "Type", "Type", "ID", "", "CRC16", "", "Bytes"]
+    puts "##############################################################################################################################"
 
-File.open('./UP-Huntington-Sub-and-Nampa-Sub-Nampa-BCP20160517-testing.log').each do |line|
     #puts "MCP data is: #{line.split(' ')[2]}"
     #puts "Line.length: #{line.length}"
     
+    puts "##############################################################################################################################"
+end
+
+File.open('./UP-Huntington-Sub-and-Nampa-Sub-Nampa-BCP20160517-testing.log').each do |line|
+
     if line.length > 2
         mcpData = MCPData.new(line.split(' ')[2])
+        if dump_all
+            mcpData.parse_mcp
+        end
+
+        mcpData.parse_control_bytes
     end
 end
 
-puts "##############################################################################################################################"
-
-#mcpData = MCPData.new("6738303238333638373005FB030331F6")
-#mcpData = MCPData.new("6738303238333638373007FC050006A053F6")
-#mcpData = MCPData.new("6738303238333638373009FC050003010029ACF6")
+if dump_all
+    puts "##############################################################################################################################"
+end
 
 #mcpData.test_tnit
-
 
 mythdb = MythDB.new
 mythdb.connect_database
